@@ -6,12 +6,13 @@ use crate::utils::evaluate_bezier;
 const GRAVITY_ACCELERATION: f32 = -9.81;
 
 #[derive(Component)]
+#[require(LinearVelocity, TrainPhysics)]
 pub struct TrackPosition {
-    track: Entity,
-    distance_on_piece: f32,
+    pub track: Entity,
+    pub distance_on_piece: f32,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct LinearVelocity {
     pub speed: f32,
 }
@@ -25,8 +26,8 @@ pub struct TrainPhysics {
 impl Default for TrainPhysics {
     fn default() -> Self {
         Self {
-            drag_factor: 0.0025,
-            rolling_resistance: 0.25,
+            drag_factor: -0.00018,
+            rolling_resistance: -0.25,
         }
     }
 }
@@ -45,9 +46,7 @@ pub fn gravity_system(
 
         let progress = (position.distance_on_piece / track_path.length_meters).clamp(0.0, 1.0);
 
-        let (_, forward_dir) = evaluate_bezier(track_path, progress);
-
-        let tangent = forward_dir.normalize_or_zero();
+        let (_, tangent) = evaluate_bezier(track_path, progress);
 
         let acceleration_along_track = GRAVITY_ACCELERATION * tangent.y;
 
@@ -61,7 +60,7 @@ pub fn friction_system(
 ) {
     for (mut linear_velocity, physics,) in cars.iter_mut() {
         let initial_speed = linear_velocity.speed;
-        if initial_speed.abs() < 0.001 {
+        if initial_speed.abs() < 0.0001 {
             continue;
         }
 
@@ -71,6 +70,8 @@ pub fn friction_system(
         let drag_speed_reduction = drag_deceleration * time.delta_secs();
 
         let total_reduction = drag_speed_reduction + friction_speed_reduction;
+
+        println!("Total reduction: {}", total_reduction);
 
         linear_velocity.speed += total_reduction * initial_speed.signum();
 
@@ -136,7 +137,7 @@ pub fn car_movement_system(
             }
         }
 
-        let progress = position.distance_on_piece / track_path.length_meters;
+        let progress = track_path.get_t_for_distance(position.distance_on_piece);
         let (world_pos, forward_dir) = evaluate_bezier(track_path, progress);
 
         let facing_dir = if velocity.speed < 0.0 { -forward_dir } else { forward_dir };

@@ -307,6 +307,7 @@ name = "bevy-coaster-sim"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_flycam",
 ]
 
 [[package]]
@@ -572,6 +573,15 @@ checksum = "8148f4edee470a2ea5cad010184c492a4c94c36d7a7158ea28e134ea87f274ab"
 dependencies = [
  "bevy_macro_utils",
  "encase_derive_impl",
+]
+
+[[package]]
+name = "bevy_flycam"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e86d62cba553c444f64b947b8ea76803d6c767dc4c23598a812974defb4265b3"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

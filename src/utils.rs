@@ -1,4 +1,7 @@
+use bevy::asset::RenderAssetUsages;
 use bevy::math::Vec3;
+use bevy::prelude::Mesh;
+use bevy::render::mesh::{Indices, PrimitiveTopology};
 use crate::track::PathComponent;
 
 pub fn evaluate_bezier(path: &PathComponent, t: f32) -> (Vec3, Vec3) {
@@ -27,4 +30,51 @@ pub fn evaluate_bezier(path: &PathComponent, t: f32) -> (Vec3, Vec3) {
     let direction = tangent.normalize_or_zero();
 
     (position, direction)
+}
+
+pub fn estimate_curve_length(mut path: &PathComponent, num_segments: u32) -> f32 {
+    let mut total_length = 0.0;
+
+    // Get the starting point of the curve (at t=0.0).
+    let (mut previous_point, _) = evaluate_bezier(&path, 0.0);
+
+    // Iterate through each segment of the curve. We start at 1 since we
+    // already have the position for segment 0.
+    for i in 1..=num_segments {
+        // Calculate our progress 't' along the curve for the current segment.
+        let progress = i as f32 / num_segments as f32;
+
+        // Get the 3D position of the next point on the curve.
+        let (current_point, _) = evaluate_bezier(&path, progress);
+
+        // Calculate the straight-line distance between the previous point and the
+        // current point, and add it to our total.
+        total_length += previous_point.distance(current_point);
+
+        // Update the previous point for the next iteration of the loop.
+        previous_point = current_point;
+    }
+
+    total_length
+}
+
+pub fn build_arc_length_table(path: &PathComponent, num_segments: u32) -> Vec<(f32, f32)> {
+    let mut table = Vec::with_capacity(num_segments as usize + 1);
+    let mut cumulative_distance = 0.0;
+
+    // Add the starting point of the curve.
+    let (mut previous_point, _) = evaluate_bezier(path, 0.0);
+    table.push((0.0, 0.0)); // At 0.0 meters, t is 0.0
+
+    for i in 1..=num_segments {
+        let progress = i as f32 / num_segments as f32;
+        let (current_point, _) = evaluate_bezier(path, progress);
+
+        // Add the distance of this segment to our running total.
+        cumulative_distance += previous_point.distance(current_point);
+        table.push((cumulative_distance, progress));
+
+        previous_point = current_point;
+    }
+    table
 }
