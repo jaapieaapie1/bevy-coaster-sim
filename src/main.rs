@@ -1,32 +1,43 @@
 mod track;
 mod train;
 mod utils;
-mod visualisation;
 
 use crate::track::{PathComponent, TrackConnection};
 use crate::train::{
-    LinearVelocity, TrackPosition, TrainPhysics, car_movement_system, friction_system,
-    gravity_system,
+    LinearVelocity, TrackPosition, car_movement_system, friction_system, gravity_system,
 };
-use crate::utils::estimate_curve_length;
-use crate::visualisation::VisualisationPlugin;
-use bevy::color::palettes::basic::WHITE;
-use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
-use bevy_flycam::PlayerPlugin;
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(VisualisationPlugin)
-        .add_plugins(PlayerPlugin)
-        .add_systems(Startup, setup)
+    let mut app = App::new();
+
+    #[cfg(feature = "visualization")]
+    {
+        mod visualisation;
+
+        use crate::visualisation::VisualisationPlugin;
+        use bevy_flycam::PlayerPlugin;
+
+        app.add_plugins((DefaultPlugins, VisualisationPlugin, PlayerPlugin));
+    }
+
+    #[cfg(not(feature = "visualization"))]
+    {
+        use bevy::app::ScheduleRunnerPlugin;
+        use std::time::Duration;
+
+        app.add_plugins(
+            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_millis(10))),
+        );
+    }
+
+    app.add_systems(Startup, setup)
         .add_systems(
             Update,
             ((gravity_system, friction_system), car_movement_system).chain(),
-        )
-        .add_systems(Update, reset_train)
-        .run();
+        );
+
+    app.run();
 }
 
 #[derive(Component)]
@@ -38,12 +49,6 @@ fn setup(mut commands: Commands) {
         brightness: 100.0,
         affects_lightmapped_meshes: true,
     });
-
-    // --- Define the Circle's Geometry ---
-    let radius = 50.0;
-    // This constant is used to approximate a circle with 4 Bézier curves.
-    let kappa = 0.552284749831;
-    let control_dist = radius * kappa;
 
     // --- Spawn the 4 Track Pieces ---
 
@@ -139,24 +144,3 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-fn reset_train(
-    input: Res<ButtonInput<KeyCode>>,
-    mut trains: Query<(&mut TrackPosition, &mut LinearVelocity)>,
-    track: Query<Entity, With<First>>,
-) {
-    if input.just_pressed(KeyCode::KeyR) {
-        let track_id = track.single().unwrap();
-        for (mut position, mut velocity) in trains.iter_mut() {
-            position.track = track_id;
-            position.distance_on_piece = 0.0;
-
-            velocity.speed = 500.0;
-        }
-    }
-
-    if input.pressed(KeyCode::KeyL) {
-        for (_, mut velocity) in trains.iter_mut() {
-            velocity.speed += 100.0;
-        }
-    }
-}

@@ -1,4 +1,3 @@
-use bevy::log::tracing_subscriber::fmt::init;
 use bevy::prelude::*;
 use crate::track::{PathComponent, TrackConnection};
 use crate::utils::evaluate_bezier;
@@ -70,8 +69,6 @@ pub fn friction_system(
         let drag_speed_reduction = drag_deceleration * time.delta_secs();
 
         let total_reduction = drag_speed_reduction + friction_speed_reduction;
-
-        println!("Total reduction: {}", total_reduction);
 
         linear_velocity.speed += total_reduction * initial_speed.signum();
 

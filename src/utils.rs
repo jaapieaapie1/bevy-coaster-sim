@@ -1,7 +1,4 @@
-use bevy::asset::RenderAssetUsages;
 use bevy::math::Vec3;
-use bevy::prelude::Mesh;
-use bevy::render::mesh::{Indices, PrimitiveTopology};
 use crate::track::PathComponent;
 
 pub fn evaluate_bezier(path: &PathComponent, t: f32) -> (Vec3, Vec3) {
@@ -32,7 +29,7 @@ pub fn evaluate_bezier(path: &PathComponent, t: f32) -> (Vec3, Vec3) {
     (position, direction)
 }
 
-pub fn estimate_curve_length(mut path: &PathComponent, num_segments: u32) -> f32 {
+pub fn estimate_curve_length(path: &PathComponent, num_segments: u32) -> f32 {
     let mut total_length = 0.0;
 
     // Get the starting point of the curve (at t=0.0).

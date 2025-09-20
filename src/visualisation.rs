@@ -3,14 +3,14 @@ use bevy::color::palettes::basic::{BLUE, RED};
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use crate::track::PathComponent;
-use crate::train::TrackPosition;
+use crate::train::{LinearVelocity, TrackPosition};
 use crate::utils::evaluate_bezier;
 
 pub struct VisualisationPlugin;
 
 impl Plugin for VisualisationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (visualise_carts, visualise_tracks, update_track_visualisation));
+        app.add_systems(Update, (reset_train, visualise_carts, visualise_tracks, update_track_visualisation));
     }
 }
 
@@ -118,4 +118,26 @@ pub fn generate_track_mesh(path: &PathComponent, subdivisions: u32, width: f32) 
     mesh.insert_indices(Indices::U32(indices));
 
     mesh
+}
+
+fn reset_train(
+    input: Res<ButtonInput<KeyCode>>,
+    mut trains: Query<(&mut TrackPosition, &mut LinearVelocity)>,
+    track: Query<Entity, With<crate::First>>,
+) {
+    if input.just_pressed(KeyCode::KeyR) {
+        let track_id = track.single().unwrap();
+        for (mut position, mut velocity) in trains.iter_mut() {
+            position.track = track_id;
+            position.distance_on_piece = 0.0;
+
+            velocity.speed = 500.0;
+        }
+    }
+
+    if input.pressed(KeyCode::KeyL) {
+        for (_, mut velocity) in trains.iter_mut() {
+            velocity.speed += 100.0;
+        }
+    }
 }
