@@ -1,6 +1,8 @@
 mod track;
 mod train;
 mod utils;
+#[cfg(feature = "visualization")]
+mod visualisation;
 
 use crate::track::{PathComponent, TrackConnection};
 use crate::train::{
@@ -13,8 +15,6 @@ fn main() {
 
     #[cfg(feature = "visualization")]
     {
-        mod visualisation;
-
         use crate::visualisation::VisualisationPlugin;
         use bevy_flycam::PlayerPlugin;
 
